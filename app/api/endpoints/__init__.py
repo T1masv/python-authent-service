@@ -1,17 +1,22 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+from datetime import timedelta
+from functools import wraps
+
 import jwt
+from flask import request, jsonify
 
 SECRET_KEY = "123123"
 
 
-def generate_token(user_id):
+def generate_token(user):
     """
     Generate encoded token
     """
     acc_payload = {
         'exp': datetime.utcnow() + timedelta(days=1),
         'iat': datetime.utcnow(),
-        'user_id': str(user_id)
+        'user_id': str(user["_id"]),
+        "role": user['role']
     }
 
     access_token = jwt.encode(acc_payload, SECRET_KEY, algorithm='HS256')
@@ -55,3 +60,41 @@ def is_token_expired(token):
     except jwt.InvalidTokenError:
         # This includes various other errors such as missing fields or bad formatting
         return True
+
+
+def get_user_info(token):
+    user_info = decode_auth_token(token)
+    return user_info
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'message': 'Authorization token is missing!'}), 403
+
+        try:
+            # Optional: Remove 'Bearer ' prefix if it exists
+            if token.startswith('Bearer '):
+                token = token[7:]
+
+            # Decode token
+            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+
+            # Check for expiration explicitly if needed
+            if payload['exp'] < datetime.now(tz=timezone.utc).timestamp():
+                return jsonify({'message': 'Token has expired. Please log in again.'}), 401
+
+            # You can add 'current_user' to kwargs if you want to pass user details to the route
+            kwargs['current_user'] = payload['user_id']
+            kwargs['role'] = payload['role']
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired. Please log in again.'}), 401
+        except (jwt.InvalidTokenError, Exception) as e:
+            return jsonify({'message': 'Invalid token. Please log in again.', 'error': str(e)}), 401
+
+        return f(*args, **kwargs)
+
+    return decorated_function

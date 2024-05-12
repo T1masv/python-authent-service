@@ -27,14 +27,16 @@ def login():
         return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
 
     if check_password_hash(user_db['password'], password):
-        return return_token(user_db['_id'])
+        return return_token(user_db)
     else:
         return jsonify({"status": "error", "message": "Invalid username or password"}), 401
 
 
-def return_token(user_id):
+
+
+def return_token(user):
     # check if session exist
     db = get_db()
-    token = generate_token(user_id)
+    token = generate_token(user)
     db.sessions.insert_one({"token": token})
     return jsonify({"status": "success", "token": token}), 201
