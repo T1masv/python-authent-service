@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, EmailStr
+from bson import ObjectId
+from pydantic import BaseModel, Field, EmailStr, field_validator, field_serializer
 from enum import Enum
-
+from typing import Any
 
 class Roles(Enum):
     ADMIN = 2
@@ -22,6 +23,15 @@ class RegisterUser(LoginUser):
 
 
 class DisplayUser(UserBase):
+    id: Any = Field(validation_alias="_id", )
     role: Roles = Field(..., exemple=1)
     email: EmailStr = Field(..., example="johndoe@example.com")
+
+    @field_serializer('id')
+    def serialize_id(id):
+        return str(id)
+
+    @field_serializer('role')
+    def serialize_role(role):
+        return role.value
 

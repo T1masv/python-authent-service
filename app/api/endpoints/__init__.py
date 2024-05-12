@@ -5,6 +5,8 @@ from functools import wraps
 import jwt
 from flask import request, jsonify
 
+from app.dependencies import get_db
+
 SECRET_KEY = "123123"
 
 
@@ -70,6 +72,7 @@ def get_user_info(token):
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        db = get_db()
         token = request.headers.get('Authorization')
         if not token:
             return jsonify({'message': 'Authorization token is missing!'}), 403
@@ -79,18 +82,29 @@ def token_required(f):
             if token.startswith('Bearer '):
                 token = token[7:]
 
+            if db.sessions.find_one({"token" : token}) is None:
+                return jsonify({'message': 'Token expired'}), 401
+
+
             # Decode token
             payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+
 
             # Check for expiration explicitly if needed
             if payload['exp'] < datetime.now(tz=timezone.utc).timestamp():
                 return jsonify({'message': 'Token has expired. Please log in again.'}), 401
 
             # You can add 'current_user' to kwargs if you want to pass user details to the route
-            kwargs['current_user'] = payload['user_id']
-            kwargs['role'] = payload['role']
+
+
+            kwargs.setdefault("token", token)
+            kwargs.setdefault("current_user", payload["user_id"])
+            kwargs.setdefault("role", payload["role"])
+
 
         except jwt.ExpiredSignatureError:
+            db = get_db()
+            db.sessions.delete_one({"token":token})
             return jsonify({'message': 'Token has expired. Please log in again.'}), 401
         except (jwt.InvalidTokenError, Exception) as e:
             return jsonify({'message': 'Invalid token. Please log in again.', 'error': str(e)}), 401
@@ -98,3 +112,5 @@ def token_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
