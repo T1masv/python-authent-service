@@ -1,4 +1,9 @@
 Flask
 pymongo
 dnspython
+
 pydantic
+pydantic[email]
+
+python-dotenv
+PyJWT

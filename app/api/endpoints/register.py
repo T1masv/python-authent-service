@@ -1,18 +1,25 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash
 from app.dependencies import get_db
+from app.api.schemas.user import RegisterUser
+from pydantic import ValidationError
 
 register_blueprint = Blueprint('register', __name__)
+
 
 @register_blueprint.route('/register', methods=['POST'])
 def register():
     db = get_db()
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
 
-    if not username or not password:
-        return jsonify({'status': 'error', 'message': 'Missing username or password'}), 400
+    try:
+        user_data = RegisterUser(**request.get_json())
+    except ValidationError as e:
+        missing = [{"field": _["loc"][-1], "errorType": _["type"]} for _ in e.errors()]
+        return jsonify({"status": "error", "stack": missing}), 400
+
+    print(user_data)
+    username = user_data.username
+    password = user_data.password
 
     # Check if user already exists
     if db.users.find_one({"username": username}):
