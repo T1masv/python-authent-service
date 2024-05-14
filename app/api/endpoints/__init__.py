@@ -10,6 +10,13 @@ from app.dependencies import get_db
 SECRET_KEY = "123123"
 
 
+class User:
+    def __init__(self, token, id, role):
+        self.token = token
+        self.id = id
+        self.role = role
+
+
 def generate_token(user):
     """
     Generate encoded token
@@ -96,10 +103,8 @@ def token_required(f):
 
             # You can add 'current_user' to kwargs if you want to pass user details to the route
 
-
-            kwargs.setdefault("token", token)
-            kwargs.setdefault("current_user", payload["user_id"])
-            kwargs.setdefault("role", payload["role"])
+            current_user = User(token, payload['user_id'], payload['role'])
+            kwargs['current_user'] = current_user
 
 
         except jwt.ExpiredSignatureError:

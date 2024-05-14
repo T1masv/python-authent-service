@@ -18,23 +18,23 @@ def filter_props(user):
 
 @users_blueprint.route('/users', methods=['GET'])
 @token_required
-def get_users(token, current_user, role):
+def get_users(current_user):
     db = get_db()
-
-    if role != 2:
+    
+    if current_user.role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"})
     else:
         users_db = list(db.users.find({}))
-        print(users_db)
         users = [DisplayUser.parse_obj(_).dict() for _ in users_db]
-        print(users)
     return jsonify({"status": "success", "users": users})
 
 
 @users_blueprint.route('/users/<id>', methods=['GET'])
 @token_required
-def get_user(token, current_user,role , id):
+def get_user(current_user , id):
     db = get_db()
+    role = current_user.role
+
     if role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"}), 403
 
@@ -49,10 +49,11 @@ def get_user(token, current_user,role , id):
 
 @users_blueprint.route('/users/<id>', methods=['PUT'])
 @token_required
-def update_user(token, current_user, role, id):
-    print(token, current_user, role, id)
+def update_user(current_user, id):
     db = get_db()
-    if role != 2:
+
+
+    if current_user.id != id or current_user.role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"}), 403
 
     user = db.users.find_one({"_id": ObjectId(id)})
@@ -66,11 +67,10 @@ def update_user(token, current_user, role, id):
 
 @users_blueprint.route('/users/<id>', methods=['DELETE'])
 @token_required
-def delete_user(token, current_user, role, id):
-    print(token, current_user, role, id)
-
+def delete_user(current_user, id):
     db = get_db()
-    if role != 2:
+
+    if current_user.role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"}), 403
 
     user = db.users.find_one({"_id": ObjectId(id)})
