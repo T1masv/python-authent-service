@@ -6,6 +6,7 @@ mongodb = None
 def init_db(config):
     global mongodb
     host, username, password, port = [config[_] for _ in ['HOST', 'USERNAME', 'PASSWORD','PORT']]
+    print(host, username, password, port)
     mongodb = MongoClient(host=host, username=username, password=password, port=int(port))
 
 
