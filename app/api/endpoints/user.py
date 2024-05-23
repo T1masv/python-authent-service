@@ -31,11 +31,11 @@ def get_users(current_user):
 
 @users_blueprint.route('/users/<id>', methods=['GET'])
 @token_required
-def get_user(current_user , id):
+def get_user(current_user, id):
     db = get_db()
     role = current_user.role
 
-    if role != 2:
+    if current_user.id != id or role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"}), 403
 
     user = db.users.find_one({"_id": ObjectId(id)})
@@ -70,7 +70,7 @@ def update_user(current_user, id):
 def delete_user(current_user, id):
     db = get_db()
 
-    if current_user.role != 2:
+    if current_user.id != id or current_user.role != 2:
         return jsonify({"status": "error", "message": "You are not authorized"}), 403
 
     user = db.users.find_one({"_id": ObjectId(id)})

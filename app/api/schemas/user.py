@@ -1,7 +1,7 @@
-from bson import ObjectId
-from pydantic import BaseModel, Field, EmailStr, field_validator, field_serializer
+from pydantic import BaseModel, Field, EmailStr, field_serializer
 from enum import Enum
 from typing import Any
+
 
 class Roles(Enum):
     ADMIN = 2
