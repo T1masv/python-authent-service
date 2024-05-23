@@ -39,4 +39,4 @@ def return_token(user):
     db = get_db()
     token = generate_token(user)
     db.sessions.insert_one({"token": token, "user_id": user['_id']})
-    return jsonify({"status": "success", "token": token}), 201
+    return jsonify({"status": "success", "token": token , "user_id": str(user['_id'])}), 201
